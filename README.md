@@ -1,2 +1,2 @@
-# Vrekrer scpi parser
-Simple SCPI parser for small Arduino projects
+# scpi_parser
+A simple SCPI parser for small Arduino projects.
