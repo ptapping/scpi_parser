@@ -77,8 +77,8 @@ SCPI_Commands::SCPI_Commands() {}
 
 SCPI_Commands::SCPI_Commands(char *message) {
   char* token = message;
-  // Trim leading spaces
-  while (isspace(*token)) token++;
+  // Trim leading whitespace
+  while (strchr(" \r\n\t", *token)) token++;
   // Discard parameters and multicommands
   not_processed_message = strpbrk(token, " \t;");
   if (not_processed_message != NULL) {
@@ -236,34 +236,30 @@ void SCPI_Parser::execute(char* message, Stream &interface) {
 }
 
 char* SCPI_Parser::getMessage(Stream& interface, char* term_chars) {
-  uint8_t msg_counter = 0;
-  msg_buffer[msg_counter] = '\0';
-
-  bool continous_data = false;
-  unsigned long last_data_millis = millis();
-  do {
-    if (interface.available()) {
-        continous_data = true;
-        last_data_millis = millis();
-        msg_buffer[msg_counter] =  interface.read();
-
-        //TODO check msg_counter overflow
-        ++msg_counter;
-        msg_buffer[msg_counter] = '\0';
-
-        if (strstr(msg_buffer, term_chars) != NULL) {
-          msg_buffer[msg_counter - strlen(term_chars)] =  '\0';
-          break;
-        }
-    } else { //No chars aviable yet
-      if ((millis() - last_data_millis) > 10) // 10 ms without new data
-        continous_data = false;
+  while (interface.available()) {
+    msg_buffer[msg_counter++] = interface.read();
+    msg_buffer[msg_counter] = '\0';
+    if (strchr(term_chars, msg_buffer[msg_counter - 1]) != NULL) {
+      // Terminator character received
+      msg_buffer[msg_counter - 1] = '\0';
+      if (msg_counter > 1) {
+        // A useful sized message
+        msg_counter = 0;
+        return msg_buffer;
+      } else {
+        // Ignore messages with only terminator chars, eg when \r\n
+        msg_counter = 0;
+        return NULL;
+      }
     }
-  } while (continous_data);
-  if (continous_data)
-    return msg_buffer;
-  else
-    return NULL;
+    if (msg_counter >= SCPI_MAX_BUFFER - 1) {
+      // Buffer full, return what we have anyway
+      msg_counter = 0;
+      return msg_buffer;
+    }
+  }
+  // No message, or message incomplete
+  return NULL;
 }
 
 void SCPI_Parser::processInput(Stream& interface, char* term_chars) {
