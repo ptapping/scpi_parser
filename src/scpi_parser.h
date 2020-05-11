@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2018 Diego González Chávez
+ * Copyright (c) 2018 Diego González Chávez, Patrick Tapping
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,21 +25,21 @@
 #ifndef SCPI_parser_h
 #define SCPI_parser_h
 
-// Maximum size of command tree and number of parameters
+// Maximun size of commnad tree and number of parameters
 #ifndef SCPI_ARRAY_SIZE
 #define SCPI_ARRAY_SIZE 6
-#endif 
+#endif
 
 #ifndef SCPI_MAX_TOKENS
 #define SCPI_MAX_TOKENS 15
-#endif 
+#endif
 
-// Maximun number of registered commands 
+// Maximun number of registered commands
 #ifndef SCPI_MAX_COMMANDS
 #define SCPI_MAX_COMMANDS 20
-#endif 
+#endif
 
-#include <Arduino.h>
+#include "Arduino.h";
 
 class SCPI_String_Array {
  public:
@@ -83,7 +83,7 @@ class SCPI_Parser {
   void execute(char* message, Stream& interface);
   void processInput(Stream &interface, char* term_chars);
   char* getMessage(Stream& interface, char* term_chars);
-  void printDebugInfo();
+  void printDebugInfo(Stream& interface);
   void printCommands(Stream& interface);
  protected:
   void addToken(char* token);
