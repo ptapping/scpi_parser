@@ -8,8 +8,7 @@ uint8_t analog_output_pins[] = {3, 5, 6, 9, 10, 11};
 uint8_t digital_input_pins[] = {2, 4, 7};
 uint8_t digital_output_pins[] = {8, 12};
 
-void setup()
-{
+void setup() {
   Serial.begin(115200);
 
   instr.registerCommand("*IDN?", &identify);
@@ -34,17 +33,16 @@ void setup()
   digitalWrite(LED_BUILTIN, LOW);
 }
 
-void loop()
-{
+void loop() {
   instr.processInput(Serial, "\r\n");
 }
 
 void help(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  instr.printCommands(interface);
-  interface.println("Numeric suffixes available:");
-  interface.println("  Analog:Input1 to " + String(sizeof(analog_input_pins)));
-  interface.println("  Analog:Output1 to " + String(sizeof(analog_output_pins)));
-  interface.println("  Digital:Input1 to " + String(sizeof(digital_input_pins)));
+  instr.printCommands(interface, false);
+  interface.print("Numeric suffixes available:\n");
+  interface.print("  Analog:Input1 to " + String(sizeof(analog_input_pins)) + "\n");
+  interface.print("  Analog:Output1 to " + String(sizeof(analog_output_pins)) + "\n");
+  interface.print("  Digital:Input1 to " + String(sizeof(digital_input_pins)) + "\n");
   interface.println("  Digital:Output1 to " + String(sizeof(digital_output_pins)));
 }
 
