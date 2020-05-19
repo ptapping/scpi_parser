@@ -61,8 +61,13 @@ void analog_value(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   // Use suffix of "Input/Output" to select analog input/output pin, note labelling is one-based
   if (String(commands.last()).endsWith("?")) {
     // Request is a query
-    if (suffixes[1] > 0 & suffixes[1] <= sizeof(analog_input_pins)) // Note sizeof(uint8_t) is 1
+    if (suffixes[1] > 0 & suffixes[1] <= sizeof(analog_input_pins)) { // Note sizeof(uint8_t) is 1
+      // Valid suffix
       interface.println(analogRead(analog_input_pins[suffixes[1] - 1]));
+    } else {
+      // Invalid suffix, return empty line
+      interface.println();
+    }
   } else {
     // Request is a command
     if (suffixes[1] > 0 & suffixes[1] <= sizeof(analog_output_pins) & parameters.size() > 0) {
@@ -83,13 +88,21 @@ void digital_out_value(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   // Use suffix of "Output" to select digital output pin, note labelling is one-based
   if (String(commands.last()).endsWith("?")) {
     // Request is a query, we can also read from a digital output pin
-    if (suffixes[1] > 0 & suffixes[1] <= sizeof(digital_output_pins))
+    if (suffixes[1] > 0 & suffixes[1] <= sizeof(digital_output_pins)) {
+      // Valid suffix
       interface.println(digitalRead(digital_output_pins[suffixes[1] - 1]));
+    } else {
+      // Invalid suffix, return empty line
+      interface.println();
+    }
   } else {
     // Request is a command
     if (suffixes[1] > 0 & suffixes[1] <= sizeof(digital_output_pins) & parameters.size() > 0) {
       // Valid pin suffix, and parameter(s) present
       digitalWrite(digital_output_pins[suffixes[1] - 1], constrain(String(parameters[0]).toInt(), 0, 1));
+    } else {
+      // Invalid suffix or no parameter, return empty line
+      interface.println();
     }
   }
 }
@@ -103,8 +116,13 @@ void digital_in_value(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   }
 
   // Use suffix of "Input" to select digital input pin, note labelling is one-based
-  if (suffixes[1] > 0 & suffixes[1] <= sizeof(digital_input_pins))
+  if (suffixes[1] > 0 & suffixes[1] <= sizeof(digital_input_pins)) {
+    // Valid suffix
     interface.println(digitalRead(digital_input_pins[suffixes[1] - 1]));
+  } else {
+    // Invalid suffix, just return an empty line
+    interface.println();
+  }
 }
 
 void set_led_state(SCPI_C commands, SCPI_P parameters, Stream& interface) {
