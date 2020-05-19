@@ -3,3 +3,9 @@
 *.eep
 *.elf
 *.hex
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# Python cache etc
+__pycache__/
