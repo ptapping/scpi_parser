@@ -22,7 +22,6 @@
  * SOFTWARE.
 */
 
-
 #include "scpi_parser.h";
 
 // SCPI_String_Array member functions
@@ -118,8 +117,7 @@ SCPI_Parameters::SCPI_Parameters(char* message) {
   }
 }
 
-
-//SCPI_Registered_Commands member functions
+//SCPI_Parser member functions
 
 void SCPI_Parser::addToken(char *token) {
   // Strip '?' or numeric suffix from end if needed
@@ -128,7 +126,13 @@ void SCPI_Parser::addToken(char *token) {
   if (token_suffix != NULL) {
     // Suffix present. Insert terminator bvte, but remember character replaced
     suffix_char = token_suffix[0];
+    #ifdef SCPI_DEBUG
+    SCPI_DEBUG_DEVICE.println("Token suffix: " + String(token_suffix));
+    #endif // SCPI_DEBUG
     token_suffix[0] = '\0';
+    #ifdef SCPI_DEBUG
+    SCPI_DEBUG_DEVICE.println("Token suffix: " + String(token_suffix[0]) + String(token_suffix));
+    #endif // SCPI_DEBUG
   }
   //add the token
   // TODO Match long or short versions of tokens
@@ -140,8 +144,19 @@ void SCPI_Parser::addToken(char *token) {
       char *stored_token = new char [strlen(token) + 1];
       strcpy(stored_token, token);
       tokens_[tokens_size_] = stored_token;
+      #ifdef SCPI_DEBUG
+      SCPI_DEBUG_DEVICE.println("Added token[" + String(tokens_size_) + "] = " + String(stored_token));
+      #endif // SCPI_DEBUG
       tokens_size_++;
+    } else {
+      #ifdef SCPI_DEBUG
+      SCPI_DEBUG_DEVICE.println("Max # tokens reached, can't add " + String(token));
+      #endif // SCPI_DEBUG
     }
+  } else {
+    #ifdef SCPI_DEBUG
+    SCPI_DEBUG_DEVICE.println("Existing token " + String(token));
+    #endif // SCPI_DEBUG
   }
   // Restore suffix char if token was modified
   if (token_suffix != token) token_suffix[0] = suffix_char;
@@ -168,22 +183,40 @@ uint32_t SCPI_Parser::getCommandCode(SCPI_Commands& commands) {
         // short token length matches, compare strings
         for (uint8_t k  = 0; k < ss; k++)
           isToken &= (toupper(header[k]) == tokens_[j][k]);
+        #ifdef SCPI_DEBUG
+        if (isToken) SCPI_DEBUG_DEVICE.println("Match to short token: " + String(header));
+        #endif // SCPI_DEBUG
       } else if (hs == ls) {
         // long token length matches, compare strings
         for (uint8_t k  = 0; k < ls; k++)
           isToken &= (toupper(header[k]) == toupper(tokens_[j][k]));
+        #ifdef SCPI_DEBUG
+        if (isToken) SCPI_DEBUG_DEVICE.println("Match to long token: " + String(header));
+        #endif // SCPI_DEBUG
       } else {
         isToken = false;
+        #ifdef SCPI_DEBUG
+        SCPI_DEBUG_DEVICE.println("No matching token: " + String(header));
+        #endif // SCPI_DEBUG
       }
       if (isToken) {
         code += j;
         break;
       }
     }
-    if (!isToken) return 0;
+    if (!isToken) {
+      #ifdef SCPI_DEBUG
+      SCPI_DEBUG_DEVICE.println("getCommandCode = 0");
+      #endif // SCPI_DEBUG
+      return 0;
+    }
   }
+  code++;
   if (header[strlen(header) - 1] == '?') code ^= 0x80000000;
-  return code+1;
+  #ifdef SCPI_DEBUG
+  SCPI_DEBUG_DEVICE.println("getCommandCode = " + String(code) + " == " + String(code & 0x7fffffff) + ((code & 0x80000000) ? "?" : ""));
+  #endif // SCPI_DEBUG
+  return code;
 }
 
 void SCPI_Parser::setCommandTreeBase(const __FlashStringHelper* tree_base) {
@@ -202,6 +235,9 @@ void SCPI_Parser::setCommandTreeBase(const char* tree_base) {
   } else {
     tree_code_ = 1;
   }
+  #ifdef SCPI_DEBUG
+  SCPI_DEBUG_DEVICE.println("setCommandTreeBase = " + String(tree_code_));
+  #endif // SCPI_DEBUG
 }
 
 void SCPI_Parser::registerCommand(const __FlashStringHelper* command, SCPI_caller_t caller) {
@@ -217,12 +253,18 @@ void SCPI_Parser::registerCommand(const char* command, SCPI_caller_t caller) {
   for (uint8_t i = 0; i < codes_size_; i++) {
     if (code == valid_codes_[i]) {
       // Command code is a duplicate, don't add it
+      #ifdef SCPI_DEBUG
+      SCPI_DEBUG_DEVICE.println("Not registering duplicate command: " + String(command));
+      #endif // SCPI_DEBUG
       return;
     }
   }
   valid_codes_[codes_size_] = code;
   callers_[codes_size_] = caller;
   codes_size_++;
+  #ifdef SCPI_DEBUG
+  SCPI_DEBUG_DEVICE.println("Registered command: " + String(command));
+  #endif // SCPI_DEBUG
 }
 
 void SCPI_Parser::execute(char* message, Stream &interface) {
@@ -291,8 +333,8 @@ void SCPI_Parser::printDebugInfo(Stream& interface) {
   interface.println();
 }
 
-void SCPI_Parser::printCommands(Stream& interface) {
-  interface.println(F("Commands are:"));
+void SCPI_Parser::printCommands(Stream& interface, bool terminate = true) {
+  interface.print(F("Commands are:\n"));
   for (uint8_t i = 0; i < codes_size_; i++) {
     interface.print("  ");
     uint32_t parent_id = ((valid_codes_[i] & 0x7fffffff) - 1)/SCPI_MAX_TOKENS;
@@ -312,7 +354,8 @@ void SCPI_Parser::printCommands(Stream& interface) {
     // Append the final node
     uint8_t token_id = (uint8_t)(((valid_codes_[i] & 0x7fffffff) - 1)%SCPI_MAX_TOKENS);
     bool is_query = bool(valid_codes_[i] & 0x80000000);
-    interface.println(String(tokens_[token_id]) + (is_query ? "?" : ""));
+    interface.print(String(tokens_[token_id]) + (is_query ? "?" : ""));
+    interface.print(terminate & i == codes_size_ - 1 ? "\r\n" : "\n");
   }
   interface.flush();
 }

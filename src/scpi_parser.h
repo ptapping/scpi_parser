@@ -25,6 +25,10 @@
 #ifndef SCPI_parser_h
 #define SCPI_parser_h
 
+// Debug flag and device
+// #define SCPI_DEBUG
+#define SCPI_DEBUG_DEVICE Serial
+
 // Maximun size of commnad tree and number of parameters
 #ifndef SCPI_ARRAY_SIZE
 #define SCPI_ARRAY_SIZE 6
@@ -90,7 +94,7 @@ class SCPI_Parser {
   void processInput(Stream &interface, char* term_chars);
   char* getMessage(Stream& interface, char* term_chars);
   void printDebugInfo(Stream& interface);
-  void printCommands(Stream& interface);
+  void printCommands(Stream& interface, bool terminate = true);
  protected:
   void addToken(char* token);
   uint32_t getCommandCode(SCPI_Commands& commands);
