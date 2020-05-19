@@ -52,7 +52,7 @@ class InstrumentUno():
         """Check that a class property name will translate to an device command string."""
         # Swap _ for : and strip numeric suffixes from tokens
         cmd = re.sub("_", ":", name)
-        cmd = re.sub("[0-9](:|\?|$)", "\g<1>", cmd)
+        cmd = re.sub("[0-9]+(:|\?|$)", "\g<1>", cmd)
         # Check if the produced command matches any valid one
         try:
             # The __getattribute__ is to prevent infinite recursion
