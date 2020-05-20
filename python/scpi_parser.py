@@ -7,10 +7,11 @@ A Python interface to an Arduino scpi_parser instrument over a USB/serial connec
 import logging, serial, time, re
 from threading import Lock
 
-class InstrumentUno():
+class Instrument():
 
     def __init__(self, serial_port, open_delay=2, device_id="SCPI Parser,"):
-        """Open serial port and initialise the device.
+        """
+        Open serial port and initialise the device.
 
         :param serial_port: The serial port to open.
         :param open_delay: Delay (in seconds) between opening of serial port and sending of first query, to allow time for device to initialise.
@@ -47,7 +48,11 @@ class InstrumentUno():
         self.close()
 
     def _check_property_name(self, name):
-        """Check that a class property name will translate to an device command string."""
+        """
+        Check that a class property name will translate to an device command string.
+
+        :param name: Python class property name to translate to device command.
+        """
         # Swap _ for : and strip numeric suffixes from tokens
         cmd = re.sub("_", ":", name)
         cmd = re.sub("[0-9]+(:|\?|$)", "\g<1>", cmd)
@@ -74,11 +79,16 @@ class InstrumentUno():
             super().__setattr__(name, value)
 
     def _send_command(self, command_string, expect_reply=False):
-        """Write a command out the the serial port.
+        """
+        Write a command out the the serial port.
 
         If ``expect_reply`` is true, then also wait for response and return the received string.
 
-        A linefeed ("\n") will be appended to the given ``command_string``."""
+        A linefeed ("\n") will be appended to the given ``command_string``.
+
+        :param command_string: Command string to send over the serial connection.
+        :param expect_reply: If true, wait for a reply from the device and return it.
+        """
 
         if self.sp == None:
             raise Exception("Can't communicate with device as serial port has been closed!")
@@ -108,6 +118,7 @@ class InstrumentUno():
         return self._send_command("HELP?", expect_reply=True)
 
     def close(self):
+        """Close the serial connection to the device."""
         if self.sp != None:
             self.sp.close()
             self.sp = None
