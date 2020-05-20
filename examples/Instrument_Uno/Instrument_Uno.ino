@@ -12,7 +12,6 @@ void setup() {
   Serial.begin(115200);
 
   instr.setDeviceID("SCPI Parser,Instrument Uno,0,0.1");
-  instr.registerCommand("Help?", &help);
   instr.setCommandTreeBase("Analog");
     instr.registerCommand(":Output", &analog_value);
     instr.registerCommand(":Input?", &analog_value);
@@ -35,15 +34,6 @@ void setup() {
 
 void loop() {
   instr.processInput(Serial, "\r\n");
-}
-
-void help(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  instr.printCommands(interface, false);
-  interface.print("Numeric suffixes available:\n");
-  interface.print("  Analog:Input1 to " + String(sizeof(analog_input_pins)) + "\n");
-  interface.print("  Analog:Output1 to " + String(sizeof(analog_output_pins)) + "\n");
-  interface.print("  Digital:Input1 to " + String(sizeof(digital_input_pins)) + "\n");
-  interface.println("  Digital:Output1 to " + String(sizeof(digital_output_pins)));
 }
 
 void analog_value(SCPI_C commands, SCPI_P parameters, Stream& interface) {

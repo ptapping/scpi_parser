@@ -43,7 +43,7 @@ class InstrumentUno():
             self.id = reply
 
         # Get list of supported commands
-        self.commands = re.findall("  ([a-zA-Z:?]+)[\r\n]", self._send_command("Help?", expect_reply=True))
+        self.commands = re.findall("  ([a-zA-Z:?]+)[\r\n]", self._send_command("HELP?", expect_reply=True))
 
     def __del__(self):
         self.close()
@@ -107,7 +107,7 @@ class InstrumentUno():
 
     def get_commands(self):
         """Return a string containing the list of possible commands the device understands."""
-        return self._send_command("Help?", expect_reply=True)
+        return self._send_command("HELP?", expect_reply=True)
 
     def close(self):
         if self.sp != None:

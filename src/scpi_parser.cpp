@@ -279,8 +279,11 @@ void SCPI_Parser::registerCommand(const char* command, SCPI_caller_t caller) {
 
 void SCPI_Parser::execute(char* message, Stream &interface) {
   // Intercept SCPI required commands, such as "*IDN?" and handle internally
+  // Note, being case sensitive here due to lazyness
   if (strcmp(message, "*IDN?") == 0) {
     interface.println(device_id);
+  } else if (strcmp(message, "HELP?") == 0) {
+    printCommands(interface);
   } else {
     // Check for matching user commands
     tree_code_ = 1;
@@ -349,7 +352,7 @@ void SCPI_Parser::printDebugInfo(Stream& interface) {
   interface.println();
 }
 
-void SCPI_Parser::printCommands(Stream& interface, bool terminate = true) {
+void SCPI_Parser::printCommands(Stream& interface) {
   interface.print(F("Commands are:\n"));
   for (uint8_t i = 0; i < codes_size_; i++) {
     interface.print("  ");
@@ -371,7 +374,7 @@ void SCPI_Parser::printCommands(Stream& interface, bool terminate = true) {
     uint8_t token_id = (uint8_t)(((valid_codes_[i] & 0x7fffffff) - 1)%SCPI_MAX_TOKENS);
     bool is_query = bool(valid_codes_[i] & 0x80000000);
     interface.print(String(tokens_[token_id]) + (is_query ? "?" : ""));
-    interface.print(terminate & i == codes_size_ - 1 ? "\r\n" : "\n");
+    interface.print(i == codes_size_ - 1 ? "\r\n" : "\n");
   }
   interface.flush();
 }
