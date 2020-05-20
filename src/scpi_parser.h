@@ -95,7 +95,7 @@ class SCPI_Parser {
   void execute(char* message, Stream& interface);
   void processInput(Stream &interface, char* term_chars);
   char* getMessage(Stream& interface, char* term_chars);
-  void printDebugInfo(Stream& interface);
+  void printDebugInfo();
   void printCommands(Stream& interface);
  protected:
   char device_id[SCPI_MAX_BUFFER] = "SCPI Parser,Default Device,0,0.1";

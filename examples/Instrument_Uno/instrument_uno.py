@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
 
 """
-A Python interface to the Instrument_Uno over the Ardunio's USB serial connection.
+A Python interface to an Arduino scpi_parser instrument over a USB/serial connection.
 """
 
 import logging, serial, time, re
-from collections import defaultdict, namedtuple
 from threading import Lock
-
-# Start of string expected to be returned from device after an "*IDN?" query
-_device_identifier = "SCPI Parser,Instrument Uno"
-
-# Wait some time (in seconds) after serial port opened before sending commands
-_open_delay = 2
 
 class InstrumentUno():
 
-    def __init__(self, serial_port):
-        """Initialise and open serial port for the device."""
+    def __init__(self, serial_port, open_delay=2, device_id="SCPI Parser,"):
+        """Open serial port and initialise the device.
+
+        :param serial_port: The serial port to open.
+        :param open_delay: Delay (in seconds) between opening of serial port and sending of first query, to allow time for device to initialise.
+        :param device_id_string: Expected prefix of device ID string, to check that the correct device was opened."
+        """
         # Lock to only allow single query to serial port at a time (from multiple threads)
         self.sp_lock = Lock()
         self.log = logging.getLogger(__name__)
-        self.log.debug("Initialising serial port ({})...".format(serial_port))
+        self.log.debug(f"Initialising serial port ({serial_port})...")
         # Open and configure serial port settings
         self.sp = serial.Serial(port=serial_port,
                          baudrate=115200,
@@ -33,17 +31,17 @@ class InstrumentUno():
         self.log.debug("Opened serial port OK.")
 
         # Wait a bit before sending first command
-        time.sleep(_open_delay)
+        time.sleep(open_delay)
 
-        # Check if device is an Instrument_Uno
+        # Check if device returns the expected ID string
         reply = self._send_command("*IDN?", expect_reply=True)
-        if not reply.startswith(_device_identifier):
-            raise Exception("Could not query device information! (device responded with {})".format(repr(reply)))
+        if not reply.startswith(device_id):
+            raise Exception(f"Expected device ID to begin with '{device_id}', received {repr(reply)}")
         else:
             self.id = reply
 
         # Get list of supported commands
-        self.commands = re.findall("  ([a-zA-Z:?]+)[\r\n]", self._send_command("HELP?", expect_reply=True))
+        self.commands = re.findall("  ([a-zA-Z:?]+)(?:\n|$)", self._send_command("HELP?", expect_reply=True))
 
     def __del__(self):
         self.close()
@@ -86,7 +84,7 @@ class InstrumentUno():
             raise Exception("Can't communicate with device as serial port has been closed!")
         command_string = command_string + "\n"
         self.sp_lock.acquire()
-        self.log.debug("Writing command string: {}".format(repr(command_string)))
+        self.log.debug(f"Writing command string: {repr(command_string)}")
         self.sp.write(bytearray(command_string, "ascii"))
         indata = ""
         if expect_reply:
@@ -94,14 +92,14 @@ class InstrumentUno():
                 try:
                     inbytes = self.sp.read(1)
                 except serial.SerialException as ex:
-                    self.log.warning("Error reading reply string! (requested '{}', received '{}')".format(repr(command_string), repr(indata)))
+                    self.log.warning(f"Error reading reply string! (requested {repr(command_string)}, received {repr(indata)})")
                     break
                 if len(inbytes) > 0:
                     indata += inbytes.decode("ascii")
                 else:
-                    self.log.warning("Timeout reading reply string! (requested '{}', received '{}')".format(repr(command_string), repr(indata)))
+                    self.log.warning(f"Timeout reading reply string! (requested {repr(command_string)}, received {repr(indata)})")
                     break
-            self.log.debug("Received reply string:  {}".format(repr(indata)))
+            self.log.debug(f"Received reply string: {repr(indata)}")
         self.sp_lock.release()
         return indata[:-2]
 
