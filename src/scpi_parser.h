@@ -86,6 +86,8 @@ typedef void (*SCPI_caller_t)(SCPI_C, SCPI_P, Stream&);
 
 class SCPI_Parser {
  public:
+  void setDeviceID(const char* id_string);
+  char* getDeviceID();
   void setCommandTreeBase(const char* tree_base);
   void setCommandTreeBase(const __FlashStringHelper* tree_base);
   void registerCommand(const char* command, SCPI_caller_t caller);
@@ -96,6 +98,7 @@ class SCPI_Parser {
   void printDebugInfo(Stream& interface);
   void printCommands(Stream& interface, bool terminate = true);
  protected:
+  char device_id[SCPI_MAX_BUFFER] = "SCPI Parser,Default Device,0,0.1";
   void addToken(char* token);
   uint32_t getCommandCode(SCPI_Commands& commands);
   uint8_t tokens_size_ = 0;

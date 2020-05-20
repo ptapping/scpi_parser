@@ -11,7 +11,7 @@ uint8_t digital_output_pins[] = {8, 12};
 void setup() {
   Serial.begin(115200);
 
-  instr.registerCommand("*IDN?", &identify);
+  instr.setDeviceID("SCPI Parser,Instrument Uno,0,0.1");
   instr.registerCommand("Help?", &help);
   instr.setCommandTreeBase("Analog");
     instr.registerCommand(":Output", &analog_value);
@@ -44,10 +44,6 @@ void help(SCPI_C commands, SCPI_P parameters, Stream& interface) {
   interface.print("  Analog:Output1 to " + String(sizeof(analog_output_pins)) + "\n");
   interface.print("  Digital:Input1 to " + String(sizeof(digital_input_pins)) + "\n");
   interface.println("  Digital:Output1 to " + String(sizeof(digital_output_pins)));
-}
-
-void identify(SCPI_C commands, SCPI_P parameters, Stream& interface) {
-  interface.println("SCPI Parser,Instrument Uno,0,0.1");
 }
 
 void analog_value(SCPI_C commands, SCPI_P parameters, Stream& interface) {

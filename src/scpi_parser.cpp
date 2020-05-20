@@ -119,6 +119,16 @@ SCPI_Parameters::SCPI_Parameters(char* message) {
 
 //SCPI_Parser member functions
 
+void SCPI_Parser::setDeviceID(const char* id_string) {
+  strncpy(device_id, id_string, SCPI_MAX_BUFFER);
+  // Ensure device_id is always null terminated
+  device_id[SCPI_MAX_BUFFER - 1] = '\0';
+}
+
+char* SCPI_Parser::getDeviceID() {
+  return device_id;
+}
+
 void SCPI_Parser::addToken(char *token) {
   // Strip '?' or numeric suffix from end if needed
   char *token_suffix = strpbrk(token, "1234567890?");
@@ -268,13 +278,19 @@ void SCPI_Parser::registerCommand(const char* command, SCPI_caller_t caller) {
 }
 
 void SCPI_Parser::execute(char* message, Stream &interface) {
-  tree_code_ = 1;
-  SCPI_Commands commands(message);
-  SCPI_Parameters parameters(commands.not_processed_message);
-  uint32_t code = this->getCommandCode(commands);
-  for (uint8_t i = 0; i < codes_size_; i++)
-    if (valid_codes_[i] == code)
-      (*callers_[i])(commands, parameters, interface);
+  // Intercept SCPI required commands, such as "*IDN?" and handle internally
+  if (strcmp(message, "*IDN?") == 0) {
+    interface.println(device_id);
+  } else {
+    // Check for matching user commands
+    tree_code_ = 1;
+    SCPI_Commands commands(message);
+    SCPI_Parameters parameters(commands.not_processed_message);
+    uint32_t code = this->getCommandCode(commands);
+    for (uint8_t i = 0; i < codes_size_; i++)
+      if (valid_codes_[i] == code)
+        (*callers_[i])(commands, parameters, interface);
+  }
 }
 
 char* SCPI_Parser::getMessage(Stream& interface, char* term_chars) {
